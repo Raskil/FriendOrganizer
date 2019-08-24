@@ -1,12 +1,10 @@
 ﻿using FriendOrganizer.Model;
 using FriendOrganizer.UI.Data.Lookups;
 using FriendOrganizer.UI.Data.Repositories;
-using FriendOrganizer.UI.Event;
 using FriendOrganizer.UI.View.Services;
 using FriendOrganizer.UI.Wrapper;
 using Prism.Commands;
 using Prism.Events;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -61,7 +59,6 @@ namespace FriendOrganizer.UI.ViewModel
             newNumber.Number = ""; //Trigger Validation
         }
 
-        private bool _hasChanges;
         private FriendPhoneNumberWrapper _selectedPhoneNumber;
 
         public override async Task LoadAsync(int? friendId)
@@ -190,7 +187,13 @@ namespace FriendOrganizer.UI.ViewModel
 
         protected override async void OnDeleteExecute()
         {
-            var result = _messageDialogService.ShowOkCancelDialog($"Do You really want to delete the friend {Friend.FirstName} {Friend.LastName}=", "Questions");
+            if (await _friendRepository.HasMeetingsAsyc(Friend.Id))
+            {
+                _messageDialogService.ShowInfoDialog($"{Friend.FirstName} {Friend.LastName} can't be deleted, as this friend is part of at least one meeting.");
+                return;
+            }
+
+            var result = _messageDialogService.ShowOkCancelDialog($"Do You really want to delete the friend {Friend.FirstName} {Friend.LastName}?", "Questions");
             if (result == MessageDialogResult.Ok)
             {
                 _friendRepository.Remove(Friend.Model);
